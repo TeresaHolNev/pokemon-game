@@ -52,35 +52,105 @@ const arrayPersonajes = [
 const game = document.getElementById("game");
 const rejilla = document.createElement("section");
 const ganador = document.getElementById("ganador");
+const btnInicio = document.getElementById("inicio");
+const reloj = document.getElementById("reloj");
+const cartelGameOver = document.getElementById("game-over");
 
-const doblePersonajes = arrayPersonajes.concat(arrayPersonajes).sort(()=> 0.5 - Math.random());
+const bounce = document.getElementById("bounce");
+const clic = document.getElementById("clic");
+const fail = document.getElementById("fail");
+const song = document.getElementById("song");
+const winner = document.getElementById("winner");
 
 var contador = 0;
 var primerSeleccionado = "";
 var segundoSeleccionado = "";
 var selPrevio = null;
+var eliminados = 0;
 
+// Creación de clase rejilla y divs para
+// cada personaje a partir de array
 
 rejilla.setAttribute("class","rejilla");
 game.appendChild(rejilla);
 
-doblePersonajes.forEach(personaje => {
-    const { nombre, rutaImagen } = personaje;
-    tarjeta = document.createElement("div");
-    tarjeta.classList.add("tarjeta");
-    tarjeta.dataset.name = nombre;
+function baraja() {
 
-    anverso = document.createElement("div");
-    anverso.classList.add("anverso");
+    const doblePersonajes = arrayPersonajes.concat(arrayPersonajes).sort(()=> 0.5 - Math.random());
 
-    reverso = document.createElement("div");
-    reverso.classList.add("reverso");
-    reverso.style.backgroundImage = `url(${rutaImagen})`;
+    doblePersonajes.forEach(personaje => {
+        const { nombre, rutaImagen } = personaje;
+        tarjeta = document.createElement("div");
+        tarjeta.classList.add("tarjeta");
+        tarjeta.dataset.name = nombre;
 
-    rejilla.appendChild(tarjeta);
-    tarjeta.appendChild(anverso);
-    tarjeta.appendChild(reverso);
-});
+        anverso = document.createElement("div");
+        anverso.classList.add("anverso");
+
+        reverso = document.createElement("div");
+        reverso.classList.add("reverso");
+        reverso.style.backgroundImage = `url(${rutaImagen})`;
+
+        rejilla.appendChild(tarjeta);
+        tarjeta.appendChild(anverso);
+        tarjeta.appendChild(reverso);
+    });
+    rejilla.classList.remove("fuera");
+    btnInicio.style.display = "none";
+    reloj.style.display = "initial";
+    cartelGameOver.style.opacity = "0";
+    eliminados = 0;
+    ganador.classList.remove("open");
+    song.currentTime = 0;
+    song.play();
+    song.volume = 0.5;
+}
+
+// Función de reloj cuenta atrás
+
+var segundos = 10;
+
+function cuentaAtras(){
+    var s = parseInt( segundos % 60);
+    var ss = ("0" + s).slice(-2);
+    var m = parseInt( segundos / 60 );
+    var mm = ("0" + m).slice(-2);
+    reloj.innerHTML = mm + ":" + ss;
+
+    if (eliminados === 2) {
+        return;
+    }
+
+    if( segundos > 0) {
+        var t = setTimeout(function(){
+            cuentaAtras(); //Recursividad   
+        }, 1000);
+    } else {
+       gameOver();
+    }
+    segundos--;
+}
+
+// Función para ejecutar la lógica de Game Over
+
+function gameOver() {
+    segundos = 10;
+    rejilla.classList.add("fuera");
+    btnInicio.style.display = "initial";
+    reloj.style.display = "none";
+    cartelGameOver.style.opacity = "1";
+    fail.currentTime = 0;
+    fail.play();
+    song.pause();
+    setTimeout(function(){
+        while(rejilla.firstChild) {
+            rejilla.removeChild(rejilla.firstChild);
+        }
+    },1000);
+}
+
+// Lógica para el evento de clic de selección
+// de cada personaje
 
 rejilla.addEventListener("click", function(evento){
     var seleccionado = evento.target;
@@ -90,6 +160,9 @@ rejilla.addEventListener("click", function(evento){
         seleccionado.parentNode.classList.contains("eliminado")) {
         return;
     }
+
+    clic.currentTime = 0;
+    clic.play();
 
     if (contador < 2) {
         contador++;
@@ -116,13 +189,20 @@ rejilla.addEventListener("click", function(evento){
     }
 });
 
+// Función para asignar la clase eliminado cuando
+// existan dos coincidencias
+
 var eliminar = function () {
     var eliminados = document.querySelectorAll(".seleccionado");
-
+    bounce.currentTime = 0;
+    bounce.play();
     eliminados.forEach(eliminado => {
         eliminado.classList.add("eliminado");
     });
 }
+
+// Función para resetear los seleccionados cuando
+// no coincidan
 
 var resetSelec = function () {
     primerSeleccionado = "";
@@ -135,10 +215,27 @@ var resetSelec = function () {
     });
 }
 
+// Función para contar los eliminados y determinar
+// cuando acaba el juego con éxito
+
 var contEliminados = function () {
-    var eliminados = document.querySelectorAll(".eliminado").length + 2;
-    if (eliminados === 24) {
-        ganador.classList.add("open");
+    eliminados = document.querySelectorAll(".eliminado").length + 2;
+    if (eliminados === 2) {
+        segundos = 20;
+        rejilla.classList.add("fuera");
+        btnInicio.style.display = "initial";
+        reloj.style.display = "none";
+        song.pause();
+        setTimeout(function(){
+            ganador.classList.add("open");
+            winner.currentTime = 0;
+            winner.play();
+        },1500);
+        setTimeout(function(){
+            while(rejilla.firstChild) {
+                rejilla.removeChild(rejilla.firstChild);
+            }
+        },1000);
     }
 }
 
